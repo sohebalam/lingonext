@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/app/firebase/config";
-import { collection, addDoc, getDocs } from "firebase/firestore";
-
+import { collection, addDoc, getDocs, getFirestore } from "firebase/firestore";
+import { ref, getStorage, uploadBytes, getDownloadURL } from "firebase/storage";
 export default function ManagePages() {
 	const [books, setBooks] = useState([]);
 	const [translations, setTranslations] = useState([
@@ -41,12 +41,31 @@ export default function ManagePages() {
 
 		const text = e.target.text.value;
 		const bookId = e.target.bookId.value;
+		const textLanguage = e.target.textLanguage.value; // Get the value for textLanguage
 
 		try {
-			await addDoc(collection(db, "pages"), { text, bookId });
+			let pictureUrl = null;
+			if (picture) {
+				const storage = getStorage();
+				const storageRef = ref(storage, `pictures/${picture.name}`);
+				await uploadBytes(storageRef, picture);
+				pictureUrl = await getDownloadURL(storageRef);
+			}
+
+			const data = {
+				text,
+				bookId,
+				textLanguage, // Include textLanguage in the data
+				translations,
+				picture: pictureUrl,
+			};
+
+			console.log("Data to be added:", data);
+
+			await addDoc(collection(db, "pages"), data);
 			alert("Page added successfully!");
 		} catch (error) {
-			console.error("Error adding page: ", error);
+			console.error("Error adding page:", error.message);
 			alert("Failed to add page.");
 		}
 
@@ -75,7 +94,7 @@ export default function ManagePages() {
 		<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
 			<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Page</h2>
 			<form onSubmit={handlePageSubmit} className="space-y-4">
-				{/* Collection Level */}
+				{/* Collection Level
 				<div>
 					<label className="block font-medium text-gray-700">
 						Select Collection Level
@@ -94,8 +113,7 @@ export default function ManagePages() {
 							</option>
 						))}
 					</select>
-				</div>
-
+				</div> */}
 				{/* Select Book */}
 				<div>
 					<label className="block font-medium text-gray-700">Select Book</label>
@@ -114,7 +132,6 @@ export default function ManagePages() {
 						))}
 					</select>
 				</div>
-
 				{/* File Input */}
 				<div>
 					<label className="block font-medium text-gray-700">
@@ -127,7 +144,6 @@ export default function ManagePages() {
 						className="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
 					/>
 				</div>
-
 				{/* Text Input */}
 				<div>
 					<label className="block font-medium text-gray-700">Enter Text</label>
@@ -138,7 +154,6 @@ export default function ManagePages() {
 						className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
 					></textarea>
 				</div>
-
 				{/* Language of Text */}
 				<div>
 					<label className="block font-medium text-gray-700">
@@ -152,7 +167,6 @@ export default function ManagePages() {
 						className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
 					/>
 				</div>
-
 				{/* Translations */}
 				<h3 className="text-lg font-medium text-gray-800">Translations</h3>
 				{translations.map((translation, index) => (
@@ -180,7 +194,6 @@ export default function ManagePages() {
 						/>
 					</div>
 				))}
-
 				{/* Add More Translations */}
 				<button
 					type="button"
@@ -189,7 +202,6 @@ export default function ManagePages() {
 				>
 					+ Add More Translations
 				</button>
-
 				{/* Submit */}
 				<div>
 					<button
