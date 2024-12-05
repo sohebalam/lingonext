@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/app/firebase/config";
-import { collection, addDoc, getDocs, getFirestore } from "firebase/firestore";
+import {
+	collection,
+	addDoc,
+	getDocs,
+	doc,
+	getDoc,
+	updateDoc,
+} from "firebase/firestore";
 import { ref, getStorage, uploadBytes, getDownloadURL } from "firebase/storage";
 export default function ManagePages() {
 	const [books, setBooks] = useState([]);
@@ -62,8 +69,27 @@ export default function ManagePages() {
 
 			console.log("Data to be added:", data);
 
-			await addDoc(collection(db, "pages"), data);
-			alert("Page added successfully!");
+			// 1. Add page to the 'pages' collection
+			const pageDocRef = await addDoc(collection(db, "pages"), data);
+			const pageId = pageDocRef.id;
+
+			// 2. Fetch the current book document from the 'books' collection
+			const bookDocRef = doc(db, "books", bookId);
+			const bookSnap = await getDoc(bookDocRef);
+
+			if (bookSnap.exists()) {
+				// 3. Update the book document by adding the pageId to the 'pages' array
+				const currentPages = bookSnap.data().pages || []; // Ensure the pages field is always an array
+				currentPages.push(pageId); // Add the new pageId to the array
+
+				await updateDoc(bookDocRef, {
+					pages: currentPages, // Update the pages field in the book document
+				});
+
+				alert("Page added successfully and associated with the book!");
+			} else {
+				alert("Book not found.");
+			}
 		} catch (error) {
 			console.error("Error adding page:", error.message);
 			alert("Failed to add page.");
@@ -94,27 +120,6 @@ export default function ManagePages() {
 		<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
 			<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Page</h2>
 			<form onSubmit={handlePageSubmit} className="space-y-4">
-				{/* Collection Level
-				<div>
-					<label className="block font-medium text-gray-700">
-						Select Collection Level
-					</label>
-					<select
-						name="collectionLevel"
-						required
-						className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-					>
-						<option value="" disabled selected>
-							Select a level
-						</option>
-						{levels.map((level) => (
-							<option key={level.id} value={level.id}>
-								{level.name}
-							</option>
-						))}
-					</select>
-				</div> */}
-				{/* Select Book */}
 				<div>
 					<label className="block font-medium text-gray-700">Select Book</label>
 					<select
