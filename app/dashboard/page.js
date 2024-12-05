@@ -34,7 +34,10 @@ export default function DisplayLevelsWithBooks() {
 							})
 						);
 
-						return { ...level, books };
+						// Filter out any null books (in case a book does not exist)
+						const validBooks = books.filter((book) => book !== null);
+
+						return { ...level, books: validBooks };
 					})
 				);
 
@@ -58,29 +61,35 @@ export default function DisplayLevelsWithBooks() {
 				<p>Loading...</p>
 			) : (
 				<div className="space-y-6">
-					{levels.map((level) => (
-						<div key={level.id} className="space-y-4">
-							<h3 className="text-xl font-semibold text-gray-800">
-								{level.name}
-							</h3>
-							<ul className="space-y-2">
-								{level.books.length > 0 ? (
-									level.books.map((book) => (
-										<li
-											key={book.id}
-											className="p-2 bg-white shadow rounded-md"
-										>
-											<p className="font-medium text-gray-700">{book.name}</p>
+					{levels.length > 0 ? (
+						levels.map((level) => (
+							<div key={level.id} className="space-y-4">
+								<h3 className="text-xl font-semibold text-gray-800">
+									{level.name}
+								</h3>
+								<ul className="space-y-2">
+									{level.books.length > 0 ? (
+										level.books.map((book) => (
+											<li
+												key={book.id}
+												className="p-2 bg-white shadow rounded-md"
+											>
+												<p className="font-medium text-gray-700">
+													{book.name ?? "No title available"}
+												</p>
+											</li>
+										))
+									) : (
+										<li className="text-gray-600">
+											No books assigned to this level
 										</li>
-									))
-								) : (
-									<li className="text-gray-600">
-										No books assigned to this level
-									</li>
-								)}
-							</ul>
-						</div>
-					))}
+									)}
+								</ul>
+							</div>
+						))
+					) : (
+						<p className="text-gray-600">No levels available.</p>
+					)}
 				</div>
 			)}
 		</div>
