@@ -9,6 +9,7 @@ import {
 	getDoc,
 	deleteDoc,
 } from "firebase/firestore"; // Firestore methods
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid"; // Heroicons for edit and delete buttons
 
 export default function DisplayLevelsWithBooks() {
 	const [levels, setLevels] = useState([]);
@@ -159,15 +160,17 @@ export default function DisplayLevelsWithBooks() {
 										<div className="flex space-x-4">
 											<button
 												onClick={() => handleEdit("level", level.id)} // Edit button for level
-												className="text-blue-600 hover:text-blue-800"
+												className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
 											>
-												Edit Level
+												<PencilIcon className="w-5 h-5" />
+												<span>Edit Level</span>
 											</button>
 											<button
 												onClick={() => deleteLevel(level.id)} // Delete button for level
-												className="text-red-600 hover:text-red-800"
+												className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
 											>
-												Delete Level
+												<TrashIcon className="w-5 h-5" />
+												<span>Delete Level</span>
 											</button>
 										</div>
 									</h3>
@@ -182,40 +185,44 @@ export default function DisplayLevelsWithBooks() {
 														<div className="flex space-x-4">
 															<button
 																onClick={() => handleEdit("book", book.id)} // Edit button for book
-																className="text-blue-600 hover:text-blue-800"
+																className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
 															>
-																Edit Book
+																<PencilIcon className="w-5 h-5" />
+																<span>Edit Book</span>
 															</button>
 															<button
 																onClick={() => deleteBook(level.id, book.id)} // Delete button for book
-																className="text-red-600 hover:text-red-800"
+																className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
 															>
-																Delete Book
+																<TrashIcon className="w-5 h-5" />
+																<span>Delete Book</span>
 															</button>
 														</div>
 													</div>
 													{/* Add the books' pages here */}
 													<div className="space-y-2 ml-4">
-														{book.pages?.map((page) => (
+														{book.pages?.map((page, index) => (
 															<div
 																key={page.id}
 																className="flex justify-between items-center"
 															>
 																<p className="text-sm text-gray-600">
-																	{page.name}
+																	Page {index + 1}: {page.name}
 																</p>
 																<div className="flex space-x-4">
 																	<button
 																		onClick={() => handleEdit("page", page.id)} // Edit button for page
-																		className="text-blue-600 hover:text-blue-800"
+																		className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
 																	>
-																		Edit Page
+																		<PencilIcon className="w-5 h-5" />
+																		<span>Edit Page</span>
 																	</button>
 																	<button
 																		onClick={() => deletePage(book.id, page.id)} // Delete button for page
-																		className="text-red-600 hover:text-red-800"
+																		className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
 																	>
-																		Delete Page
+																		<TrashIcon className="w-5 h-5" />
+																		<span>Delete Page</span>
 																	</button>
 																</div>
 															</div>
