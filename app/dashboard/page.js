@@ -8,6 +8,7 @@ import {
 	doc,
 	getDoc,
 	deleteDoc,
+	setDoc,
 } from "firebase/firestore"; // Firestore methods
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid"; // Heroicons for edit and delete buttons
 
@@ -16,7 +17,6 @@ export default function DisplayLevelsWithBooks() {
 	const [loading, setLoading] = useState(false);
 	const router = useRouter(); // Using the router hook
 
-	// Fetch levels and books
 	useEffect(() => {
 		const fetchLevels = async () => {
 			setLoading(true);
@@ -24,18 +24,25 @@ export default function DisplayLevelsWithBooks() {
 			try {
 				// Fetch levels from Firestore
 				const levelsSnapshot = await getDocs(collection(db, "levels"));
+				console.log("Levels Snapshot:", levelsSnapshot);
+
 				const levelsData = await Promise.all(
 					levelsSnapshot.docs.map(async (levelDoc) => {
 						const level = { id: levelDoc.id, ...levelDoc.data() };
 
+						console.log("Level Data:", level); // Log each level's data to inspect it
+
 						// Ensure books is always an array, even if undefined or empty
 						const bookIds = level.books || []; // Default to an empty array if 'books' is undefined
+						console.log("Book IDs:", bookIds); // Log book IDs to check the structure
 
 						// Fetch books associated with the level
 						const books = await Promise.all(
 							bookIds.map(async (bookId) => {
 								const bookRef = doc(db, "books", bookId);
 								const bookSnap = await getDoc(bookRef);
+								console.log("Book Snapshot:", bookSnap); // Log book snapshot to check data
+
 								return bookSnap.exists()
 									? { id: bookSnap.id, ...bookSnap.data() }
 									: null;
@@ -44,6 +51,29 @@ export default function DisplayLevelsWithBooks() {
 
 						// Filter out any null books (in case a book does not exist)
 						const validBooks = books.filter((book) => book !== null);
+
+						// Fetch the page data for each book's pages
+						for (const book of validBooks) {
+							if (book.pages) {
+								console.log(`Page IDs for Book ${book.id}:`, book.pages); // Log the page IDs directly
+
+								// Fetch page details for each page ID in the book
+								const pageDetails = await Promise.all(
+									book.pages.map(async (pageId) => {
+										const pageRef = doc(db, "pages", pageId); // Assuming pages are stored in a "pages" collection
+										const pageSnap = await getDoc(pageRef);
+										return pageSnap.exists()
+											? { id: pageSnap.id, ...pageSnap.data() }
+											: null;
+									})
+								);
+
+								console.log("Page Details for Book:", book.id, pageDetails); // Log the page data
+								book.pages = pageDetails.filter((page) => page !== null); // Filter out null pages
+							} else {
+								console.log("No pages in book:", book.id); // Log if no pages exist
+							}
+						}
 
 						return { ...level, books: validBooks };
 					})
@@ -67,7 +97,7 @@ export default function DisplayLevelsWithBooks() {
 		} else if (type === "book") {
 			router.push(`/edit-book/${id}`);
 		} else if (type === "page") {
-			router.push(`/edit-page/${id}`);
+			router.push(`/edit-page/${id}`); // Edit page action
 		}
 	};
 
@@ -118,21 +148,19 @@ export default function DisplayLevelsWithBooks() {
 
 			if (bookSnap.exists()) {
 				const bookData = bookSnap.data();
+				// Filter out the page to be deleted
 				const updatedPages = bookData.pages.filter(
 					(page) => page.id !== pageId
 				);
 
+				// Update the book document with the new pages array
 				await setDoc(bookRef, { ...bookData, pages: updatedPages });
-				// Remove the page from the displayed book
+
+				// Update the displayed levels by removing the page
 				setLevels((prevLevels) =>
 					prevLevels.map((level) =>
 						level.books.map((book) =>
-							book.id === bookId
-								? {
-										...book,
-										pages: updatedPages,
-								  }
-								: book
+							book.id === bookId ? { ...book, pages: updatedPages } : book
 						)
 					)
 				);
@@ -218,7 +246,9 @@ export default function DisplayLevelsWithBooks() {
 																		<span>Edit Page</span>
 																	</button>
 																	<button
-																		onClick={() => deletePage(book.id, page.id)} // Delete button for page
+																		onClick={
+																			() => deletePage(book.id, page.id) // Delete button for page
+																		}
 																		className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
 																	>
 																		<TrashIcon className="w-5 h-5" />
@@ -231,16 +261,14 @@ export default function DisplayLevelsWithBooks() {
 												</div>
 											))
 										) : (
-											<p className="text-gray-600">
-												No books assigned to this level
-											</p>
+											<p>No books available in this level.</p>
 										)}
 									</div>
 								</div>
 							</div>
 						))
 					) : (
-						<p className="text-gray-600">No levels available.</p>
+						<p>No levels found.</p>
 					)}
 				</div>
 			)}
