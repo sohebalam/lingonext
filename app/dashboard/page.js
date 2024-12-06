@@ -1,19 +1,19 @@
 "use client";
 import { useState, useEffect } from "react";
-import { db } from "@/app/firebase/config"; // Firebase config import
+import { db } from "@/app/firebase/config"; // Import Firebase config
+import { useRouter } from "next/navigation"; // Import the router
 import {
 	collection,
 	getDocs,
 	doc,
 	getDoc,
 	deleteDoc,
-	setDoc,
 } from "firebase/firestore"; // Firestore methods
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid"; // Heroicons import
 
 export default function DisplayLevelsWithBooks() {
 	const [levels, setLevels] = useState([]);
 	const [loading, setLoading] = useState(false);
+	const router = useRouter(); // Using the router hook
 
 	// Fetch levels and books
 	useEffect(() => {
@@ -59,80 +59,85 @@ export default function DisplayLevelsWithBooks() {
 		fetchLevels();
 	}, []);
 
-	// Handle level deletion with confirmation
-	const deleteLevelWithConfirm = async (levelId) => {
-		const confirmDelete = window.confirm(
-			"Are you sure you want to delete this level?"
-		);
-		if (confirmDelete) {
-			try {
-				const levelRef = doc(db, "levels", levelId);
-				await deleteDoc(levelRef);
-				setLevels((prevLevels) =>
-					prevLevels.filter((level) => level.id !== levelId)
-				);
-			} catch (error) {
-				console.error("Error deleting level:", error);
-			}
+	// Handle edit navigation
+	const handleEdit = (type, id) => {
+		if (type === "level") {
+			router.push(`/edit-level/${id}`);
+		} else if (type === "book") {
+			router.push(`/edit-book/${id}`);
+		} else if (type === "page") {
+			router.push(`/edit-page/${id}`);
 		}
 	};
 
-	// Handle book deletion with confirmation
-	const deleteBookWithConfirm = async (levelId, bookId) => {
-		const confirmDelete = window.confirm(
-			"Are you sure you want to delete this book?"
-		);
-		if (confirmDelete) {
-			try {
-				const bookRef = doc(db, "books", bookId);
-				await deleteDoc(bookRef);
+	// Handle book deletion
+	const deleteBook = async (levelId, bookId) => {
+		try {
+			// Delete book from Firestore
+			const bookRef = doc(db, "books", bookId);
+			await deleteDoc(bookRef);
+
+			// Remove the book from the level's books array
+			setLevels((prevLevels) =>
+				prevLevels.map((level) =>
+					level.id === levelId
+						? {
+								...level,
+								books: level.books.filter((book) => book.id !== bookId),
+						  }
+						: level
+				)
+			);
+		} catch (error) {
+			console.error("Error deleting book:", error);
+		}
+	};
+
+	// Handle level deletion
+	const deleteLevel = async (levelId) => {
+		try {
+			// Delete level from Firestore
+			const levelRef = doc(db, "levels", levelId);
+			await deleteDoc(levelRef);
+
+			// Remove the level from the state
+			setLevels((prevLevels) =>
+				prevLevels.filter((level) => level.id !== levelId)
+			);
+		} catch (error) {
+			console.error("Error deleting level:", error);
+		}
+	};
+
+	// Handle page deletion (if pages are included in books)
+	const deletePage = async (bookId, pageId) => {
+		try {
+			const bookRef = doc(db, "books", bookId);
+			const bookSnap = await getDoc(bookRef);
+
+			if (bookSnap.exists()) {
+				const bookData = bookSnap.data();
+				const updatedPages = bookData.pages.filter(
+					(page) => page.id !== pageId
+				);
+
+				await setDoc(bookRef, { ...bookData, pages: updatedPages });
+				// Remove the page from the displayed book
 				setLevels((prevLevels) =>
 					prevLevels.map((level) =>
-						level.id === levelId
-							? {
-									...level,
-									books: level.books.filter((book) => book.id !== bookId),
-							  }
-							: level
+						level.books.map((book) =>
+							book.id === bookId
+								? {
+										...book,
+										pages: updatedPages,
+								  }
+								: book
+						)
 					)
 				);
-			} catch (error) {
-				console.error("Error deleting book:", error);
 			}
-		}
-	};
-
-	// Handle page deletion with confirmation
-	const deletePageWithConfirm = async (bookId, pageId) => {
-		const confirmDelete = window.confirm(
-			"Are you sure you want to delete this page?"
-		);
-		if (confirmDelete) {
-			try {
-				const bookRef = doc(db, "books", bookId);
-				const bookSnap = await getDoc(bookRef);
-				if (bookSnap.exists()) {
-					const bookData = bookSnap.data();
-					const updatedPages = bookData.pages.filter(
-						(page) => page.id !== pageId
-					);
-					await setDoc(bookRef, { ...bookData, pages: updatedPages });
-					setLevels((prevLevels) =>
-						prevLevels.map((level) =>
-							level.books.map((book) =>
-								book.id === bookId
-									? {
-											...book,
-											pages: updatedPages,
-									  }
-									: book
-							)
-						)
-					);
-				}
-			} catch (error) {
-				console.error("Error deleting page:", error);
-			}
+		} catch (error) {
+			console.error("Error deleting page:", error);
 		}
 	};
 
@@ -154,17 +159,15 @@ export default function DisplayLevelsWithBooks() {
 										<div className="flex space-x-4">
 											<button
 												onClick={() => handleEdit("level", level.id)} // Edit button for level
-												className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
+												className="text-blue-600 hover:text-blue-800"
 											>
-												<PencilIcon className="w-5 h-5" />
-												<span>Edit Level</span>
+												Edit Level
 											</button>
 											<button
-												onClick={() => deleteLevelWithConfirm(level.id)} // Delete with confirmation
-												className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
+												onClick={() => deleteLevel(level.id)} // Delete button for level
+												className="text-red-600 hover:text-red-800"
 											>
-												<TrashIcon className="w-5 h-5" />
-												<span>Delete Level</span>
+												Delete Level
 											</button>
 										</div>
 									</h3>
@@ -179,23 +182,19 @@ export default function DisplayLevelsWithBooks() {
 														<div className="flex space-x-4">
 															<button
 																onClick={() => handleEdit("book", book.id)} // Edit button for book
-																className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
+																className="text-blue-600 hover:text-blue-800"
 															>
-																<PencilIcon className="w-5 h-5" />
-																<span>Edit Book</span>
+																Edit Book
 															</button>
 															<button
-																onClick={() =>
-																	deleteBookWithConfirm(level.id, book.id)
-																} // Delete book with confirmation
-																className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
+																onClick={() => deleteBook(level.id, book.id)} // Delete button for book
+																className="text-red-600 hover:text-red-800"
 															>
-																<TrashIcon className="w-5 h-5" />
-																<span>Delete Book</span>
+																Delete Book
 															</button>
 														</div>
 													</div>
-
+													{/* Add the books' pages here */}
 													<div className="space-y-2 ml-4">
 														{book.pages?.map((page) => (
 															<div
@@ -203,18 +202,20 @@ export default function DisplayLevelsWithBooks() {
 																className="flex justify-between items-center"
 															>
 																<p className="text-sm text-gray-600">
-																	{page.name ||
-																		`Page ${book.pages.indexOf(page) + 1}`}
+																	{page.name}
 																</p>
 																<div className="flex space-x-4">
 																	<button
-																		onClick={() =>
-																			deletePageWithConfirm(book.id, page.id)
-																		} // Delete page with confirmation
-																		className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
+																		onClick={() => handleEdit("page", page.id)} // Edit button for page
+																		className="text-blue-600 hover:text-blue-800"
 																	>
-																		<TrashIcon className="w-5 h-5" />
-																		<span>Delete Page</span>
+																		Edit Page
+																	</button>
+																	<button
+																		onClick={() => deletePage(book.id, page.id)} // Delete button for page
+																		className="text-red-600 hover:text-red-800"
+																	>
+																		Delete Page
 																	</button>
 																</div>
 															</div>
