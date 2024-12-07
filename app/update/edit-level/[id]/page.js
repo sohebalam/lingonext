@@ -19,7 +19,7 @@ export default function EditLevel() {
 
 		const fetchLevel = async () => {
 			try {
-				const levelDoc = await getDoc(doc(db, "levels", ids));
+				const levelDoc = await getDoc(doc(db, "levels", id));
 				if (levelDoc.exists()) {
 					const levelData = levelDoc.data();
 					setLevel(levelData);
@@ -51,7 +51,7 @@ export default function EditLevel() {
 		setLoading(true);
 
 		try {
-			await updateDoc(doc(db, "levels", ids), formData);
+			await updateDoc(doc(db, "levels", id), formData);
 			alert("Level updated successfully!");
 		} catch (error) {
 			console.error("Error updating level:", error);

@@ -93,11 +93,11 @@ export default function DisplayLevelsWithBooks() {
 	// Handle edit navigation
 	const handleEdit = (type, id) => {
 		if (type === "level") {
-			router.push(`/edit-level/${id}`);
+			router.push(`/update/edit-level/${id}`);
 		} else if (type === "book") {
-			router.push(`/edit-book/${id}`);
+			router.push(`/update/edit-book/${id}`);
 		} else if (type === "page") {
-			router.push(`/edit-page/${id}`); // Edit page action
+			router.push(`/update/edit-page/${id}`); // Edit page action
 		}
 	};
 
