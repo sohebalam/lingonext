@@ -17,6 +17,7 @@ export default function ManageLevelsBooks() {
 	const [selectedLevel, setSelectedLevel] = useState("");
 	const [selectedBook, setSelectedBook] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [languages, setLanguages] = useState([]);
 
 	// Fetch levels and books initially
 	useEffect(() => {
@@ -119,9 +120,66 @@ export default function ManageLevelsBooks() {
 			setLoading(false);
 		}
 	};
+	const handleLanguageSubmit = async (e) => {
+		e.preventDefault();
+		setLoading(true);
+		const languageName = e.target.languageName.value.trim().toLowerCase(); // Normalize input for uniqueness check
+
+		try {
+			// Fetch all languages
+			const languagesSnapshot = await getDocs(collection(db, "languages"));
+			const languageExists = languagesSnapshot.docs.some((doc) => {
+				const docData = doc.data();
+				// Ensure the name field exists before checking
+				return docData.name && docData.name.toLowerCase() === languageName;
+			});
+
+			if (languageExists) {
+				alert("Language already exists!");
+			} else {
+				// Add the new language to the collection
+				await addDoc(collection(db, "languages"), { name: languageName });
+				const updatedLanguagesSnapshot = await getDocs(
+					collection(db, "languages")
+				);
+				setLanguages(
+					updatedLanguagesSnapshot.docs.map((doc) => ({
+						id: doc.id,
+						...doc.data(),
+					}))
+				);
+				alert("Language added successfully!");
+			}
+		} catch (error) {
+			console.error("Error adding language: ", error);
+			alert("Failed to add language.");
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	return (
 		<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
+			{/* Add Language Form */}
+			<div>
+				<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Language</h2>
+				<form onSubmit={handleLanguageSubmit} className="space-y-4">
+					<input
+						type="text"
+						name="languageName"
+						placeholder="Enter language name"
+						required
+						className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+					/>
+					<button
+						type="submit"
+						disabled={loading}
+						className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
+					>
+						{loading ? "Loading..." : "Add Language"}
+					</button>
+				</form>
+			</div>
 			{/* Level Form */}
 			<div>
 				<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Level</h2>
