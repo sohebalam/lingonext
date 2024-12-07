@@ -59,11 +59,9 @@ export default function ManagePages() {
 		setLoading(true);
 		setError(""); // Clear previous errors
 
-		// Only get the values of the fields that exist
-		const text = isFrontCover ? "" : e.target.text.value; // If it's a front cover, skip the text field
+		const text = e.target.text.value;
 		const bookId = e.target.bookId.value;
-		const textLanguage = e.target.textLanguage?.value || ""; // Use optional chaining in case textLanguage doesn't exist
-		const translations = isFrontCover ? [] : [...translations]; // Skip translations if it's the front cover
+		const textLanguage = e.target.textLanguage.value; // Selected language ID
 
 		// Validation: Ensure a picture is uploaded
 		if (!picture) {
