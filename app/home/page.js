@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { db } from "@/app/firebase/config";
 import {
@@ -21,6 +20,7 @@ export default function ManagePages() {
 	]);
 	const [picture, setPicture] = useState(null);
 	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState(""); // To store error messages
 
 	// Fetch books, levels, and languages
 	useEffect(() => {
@@ -56,10 +56,32 @@ export default function ManagePages() {
 	const handlePageSubmit = async (e) => {
 		e.preventDefault();
 		setLoading(true);
+		setError(""); // Clear previous errors
 
 		const text = e.target.text.value;
 		const bookId = e.target.bookId.value;
 		const textLanguage = e.target.textLanguage.value; // Selected language ID
+
+		// Validation: Ensure a picture is uploaded
+		if (!picture) {
+			setLoading(false);
+			setError("Please upload a picture.");
+			return;
+		}
+
+		// Validation: Ensure there is at least one translation
+		if (!translations.length || !translations[0].text) {
+			setLoading(false);
+			setError("Please provide at least one translation.");
+			return;
+		}
+
+		// Validation: Ensure original text is provided
+		if (!text) {
+			setLoading(false);
+			setError("Please provide the original text.");
+			return;
+		}
 
 		try {
 			let pictureUrl = null;
@@ -123,6 +145,13 @@ export default function ManagePages() {
 	return (
 		<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
 			<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Page</h2>
+
+			{error && (
+				<div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
+					{error}
+				</div>
+			)}
+
 			<form onSubmit={handlePageSubmit} className="space-y-4">
 				{/* Select Book */}
 				<div>
