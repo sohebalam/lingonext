@@ -1,14 +1,12 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { db } from "@/app/firebase/config";
 import { collection, getDoc, updateDoc, doc } from "firebase/firestore";
-import { ref, getStorage, uploadBytes, getDownloadURL } from "firebase/storage";
+import Draggable from "react-draggable";
 
 export default function EditPage() {
-	const { id } = useParams(); // Get dynamic route param
-	const [pageData, setPageData] = useState(null);
+	const { id } = useParams();
 	const [loading, setLoading] = useState(true);
 	const [formData, setFormData] = useState({
 		text: "",
@@ -18,6 +16,9 @@ export default function EditPage() {
 		pictureUrl: "",
 		isFrontCover: false,
 	});
+	const [pages, setPages] = useState([]); // To manage the order of pages
+
+	const nodeRef = useRef(null); // For the Draggable component
 
 	useEffect(() => {
 		const fetchPageData = async () => {
@@ -26,7 +27,6 @@ export default function EditPage() {
 					const pageDoc = await getDoc(doc(db, "pages", id));
 					if (pageDoc.exists()) {
 						const data = pageDoc.data();
-						setPageData(data);
 						setFormData((prev) => ({
 							...prev,
 							...data,
@@ -35,6 +35,12 @@ export default function EditPage() {
 					} else {
 						alert("Page not found.");
 					}
+					// Example pages array for drag-and-drop functionality
+					setPages([
+						{ id: "1", name: "Page 1" },
+						{ id: "2", name: "Page 2" },
+						{ id: "3", name: "Page 3" },
+					]);
 				}
 			} catch (error) {
 				console.error("Error fetching page:", error);
@@ -45,168 +51,120 @@ export default function EditPage() {
 		fetchPageData();
 	}, [id]);
 
-	// Handle input changes
-	const handleChange = (e) => {
-		const { name, value } = e.target;
-		setFormData((prev) => ({ ...prev, [name]: value }));
-	};
+	// Handle drag events and update the order
+	const handleDragStop = async (data, index) => {
+		const updatedPages = [...pages];
+		const draggedPage = updatedPages.splice(index, 1)[0]; // Remove dragged page
+		const newPosition = Math.max(
+			0,
+			Math.min(updatedPages.length, data.y / 100)
+		); // Ensure position is valid within bounds
 
-	// Handle file input
-	const handleFileChange = async (e) => {
-		const file = e.target.files[0];
-		if (file) {
-			try {
-				const storage = getStorage();
-				const storageRef = ref(storage, `pictures/${file.name}`);
-				await uploadBytes(storageRef, file);
-				const pictureUrl = await getDownloadURL(storageRef);
+		updatedPages.splice(newPosition, 0, draggedPage); // Insert the page at the new position
+		setPages(updatedPages);
 
-				setFormData((prev) => ({
-					...prev,
-					picture: file,
-					pictureUrl,
-				}));
-			} catch (error) {
-				console.error("Error uploading picture:", error);
-			}
-		}
-	};
-
-	// Handle translation changes
-	const handleTranslationChange = (index, field, value) => {
-		const updatedTranslations = [...formData.translations];
-		updatedTranslations[index][field] = value;
-		setFormData((prev) => ({
-			...prev,
-			translations: updatedTranslations,
-		}));
-	};
-
-	// Add new translation field
-	const addTranslation = () => {
-		setFormData((prev) => ({
-			...prev,
-			translations: [...prev.translations, { language: "", text: "" }],
-		}));
-	};
-
-	// Submit form
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		setLoading(true);
-
+		// Update the order in the database
 		try {
-			const updatedData = {
-				text: formData.text,
-				textLanguage: formData.textLanguage,
-				translations: formData.translations,
-				picture: formData.pictureUrl,
-				isFrontCover: formData.isFrontCover,
-			};
-
-			await updateDoc(doc(db, "pages", id), updatedData);
-			alert("Page updated successfully!");
+			await updateDoc(doc(db, "pages", id), {
+				order: updatedPages.map((page) => page.id), // Assuming you want to save the order of the pages by ID
+			});
+			console.log("Page order updated successfully.");
 		} catch (error) {
-			console.error("Error updating page:", error.message);
-			alert("Failed to update page.");
-		} finally {
-			setLoading(false);
+			console.error("Error updating page order:", error);
 		}
 	};
 
 	if (loading) return <p>Loading...</p>;
 
 	return (
-		<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md">
-			<h2 className="text-2xl font-bold text-gray-800 mb-4">Edit Page</h2>
-			<form onSubmit={handleSubmit} className="space-y-4">
-				{/* Picture Input */}
-				<div className="flex items-center gap-1">
-					<div>
-						<label className="block font-medium text-gray-700">
-							Update Picture
-						</label>
-						<input
-							type="file"
-							accept="image/*"
-							onChange={handleFileChange}
-							className="block mt-1"
-						/>
+		<div className="flex space-x-10 max-w-6xl mx-auto p-6 bg-gray-100 rounded-md shadow-md">
+			{/* Form Column */}
+			<div className="w-2/3 space-y-4">
+				<h2 className="text-2xl font-bold text-gray-800 mb-4">Edit Page</h2>
+				<form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+					{/* Picture Input */}
+					<div className="flex items-center gap-2">
+						<div>
+							<label className="block font-medium text-gray-700">
+								Update Picture
+							</label>
+							<input
+								type="file"
+								accept="image/*"
+								onChange={(e) => {
+									const file = e.target.files[0];
+									if (file) {
+										// Handle file upload logic here
+									}
+								}}
+								className="block mt-1"
+							/>
+						</div>
+						{/* Display Current Picture */}
+						{formData.pictureUrl && (
+							<img
+								src={formData.pictureUrl}
+								alt="Current Page"
+								className="w-16 h-16 rounded-full object-cover border"
+							/>
+						)}
 					</div>
-					{/* Display Current Picture */}
-					{formData.pictureUrl && (
-						<img
-							src={formData.pictureUrl}
-							alt="Current Page"
-							className="w-16 h-16 rounded-full object-cover border"
-						/>
-					)}
-				</div>
 
-				{/* Text Input */}
-				<div>
-					<label className="block font-medium text-gray-700">Text</label>
-					<textarea
-						name="text"
-						value={formData.text}
-						onChange={handleChange}
-						rows="4"
-						className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-					></textarea>
-				</div>
-				{/* Language */}
-				<div>
-					<label className="block font-medium text-gray-700">
-						Language of Text
-					</label>
-					<input
-						type="text"
-						name="textLanguage"
-						value={formData.textLanguage}
-						onChange={handleChange}
-						className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-					/>
-				</div>
-				{/* Translations */}
-				<h3 className="text-lg font-medium">Translations</h3>
-				{formData.translations.map((translation, index) => (
-					<div key={index} className="space-y-2">
-						<input
-							type="text"
-							placeholder="Language"
-							value={translation.language}
-							onChange={(e) =>
-								handleTranslationChange(index, "language", e.target.value)
-							}
-							className="w-full p-2 border border-gray-300 rounded-md"
-						/>
+					{/* Text Input */}
+					<div>
+						<label className="block font-medium text-gray-700">Text</label>
 						<textarea
-							placeholder="Translation Text"
-							value={translation.text}
+							name="text"
+							value={formData.text}
 							onChange={(e) =>
-								handleTranslationChange(index, "text", e.target.value)
+								setFormData({ ...formData, text: e.target.value })
 							}
-							rows="2"
-							className="w-full p-2 border border-gray-300 rounded-md"
+							rows="4"
+							className="w-full mt-1 p-2 border border-gray-300 rounded-md"
 						></textarea>
 					</div>
-				))}
-				<button
-					type="button"
-					onClick={addTranslation}
-					className="text-blue-600 hover:underline"
-				>
-					+ Add Translation
-				</button>
-				{/* Submit */}
-				<button
-					type="submit"
-					disabled={loading}
-					className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-				>
-					{loading ? "Updating..." : "Update Page"}
-				</button>
-			</form>
+					{/* Language */}
+					<div>
+						<label className="block font-medium text-gray-700">
+							Language of Text
+						</label>
+						<input
+							type="text"
+							name="textLanguage"
+							value={formData.textLanguage}
+							onChange={(e) =>
+								setFormData({ ...formData, textLanguage: e.target.value })
+							}
+							className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+						/>
+					</div>
+				</form>
+			</div>
+
+			{/* Draggable Pages Column */}
+			<div className="w-1/4 bg-white p-4 rounded-md shadow-md">
+				<h3 className="text-lg font-bold text-gray-800 mb-2">Reorder Pages</h3>
+				{/* Swapy Container for Draggable Pages */}
+				<div className="pages-container">
+					{pages.map((page, index) => (
+						<Draggable
+							key={page.id}
+							axis="y" // Restrict to vertical dragging only
+							position={null} // Not controlling position
+							bounds={{ top: 0, bottom: 500 }} // Adjust bounds as needed to restrict the drop zone
+							nodeRef={nodeRef} // Use nodeRef to reference the DOM node
+							onStop={(e, data) => handleDragStop(data, index)} // Handle the drop event
+						>
+							<div
+								ref={nodeRef}
+								className="p-2 border border-gray-300 rounded-md bg-gray-50 flex items-center"
+							>
+								<span>{page.name}</span>
+							</div>
+						</Draggable>
+					))}
+				</div>
+			</div>
 		</div>
 	);
 }
