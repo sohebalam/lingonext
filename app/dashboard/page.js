@@ -102,53 +102,79 @@ export default function DisplayLevelsWithBooks() {
 	};
 
 	// Handle book deletion
+	// Handle book deletion with confirmation
 	const deleteBook = async (levelId, bookId) => {
+		// Show confirmation dialog before deletion
+		const isConfirmed = window.confirm(
+			"Are you sure you want to delete this book?"
+		);
+		if (!isConfirmed) return; // If not confirmed, exit early
+
 		try {
 			// Delete book from Firestore
 			const bookRef = doc(db, "books", bookId);
 			await deleteDoc(bookRef);
 
-			// Remove the book from the level's books array
+			// Remove the book from the level's books array in state
 			setLevels((prevLevels) =>
 				prevLevels.map((level) =>
 					level.id === levelId
 						? {
 								...level,
-								books: level.books.filter((book) => book.id !== bookId),
+								books: level.books.filter((book) => book.id !== bookId), // Remove book from level's books
 						  }
 						: level
 				)
 			);
+
+			alert("Book deleted successfully!"); // Optional confirmation message
 		} catch (error) {
 			console.error("Error deleting book:", error);
 		}
 	};
 
 	// Handle level deletion
+	// Handle level deletion with confirmation
 	const deleteLevel = async (levelId) => {
+		// Show confirmation dialog before deletion
+		const isConfirmed = window.confirm(
+			"Are you sure you want to delete this level?"
+		);
+		if (!isConfirmed) return; // If not confirmed, exit early
+
 		try {
 			// Delete level from Firestore
 			const levelRef = doc(db, "levels", levelId);
 			await deleteDoc(levelRef);
 
 			// Remove the level from the state
-			setLevels((prevLevels) =>
-				prevLevels.filter((level) => level.id !== levelId)
+			setLevels(
+				(prevLevels) => prevLevels.filter((level) => level.id !== levelId) // Remove level from state
 			);
+
+			alert("Level deleted successfully!"); // Optional confirmation message
 		} catch (error) {
 			console.error("Error deleting level:", error);
 		}
 	};
 
 	// Handle page deletion (if pages are included in books)
+
 	const deletePage = async (bookId, pageId) => {
+		// Show confirmation dialog before deletion
+		const isConfirmed = window.confirm(
+			"Are you sure you want to delete this page?"
+		);
+		if (!isConfirmed) return; // If not confirmed, exit early
+
 		try {
 			const bookRef = doc(db, "books", bookId);
 			const bookSnap = await getDoc(bookRef);
 
 			if (bookSnap.exists()) {
 				const bookData = bookSnap.data();
-				// Filter out the page to be deleted
+
+				// Filter out the page to be deleted from the book's pages array
 				const updatedPages = bookData.pages.filter(
 					(page) => page.id !== pageId
 				);
@@ -156,14 +182,26 @@ export default function DisplayLevelsWithBooks() {
 				// Update the book document with the new pages array
 				await setDoc(bookRef, { ...bookData, pages: updatedPages });
 
-				// Update the displayed levels by removing the page
+				// Delete the page from the "pages" collection
+				const pageRef = doc(db, "pages", pageId);
+				await deleteDoc(pageRef);
+
+				// Update the displayed levels by removing the page from state
 				setLevels((prevLevels) =>
-					prevLevels.map((level) =>
-						level.books.map((book) =>
-							book.id === bookId ? { ...book, pages: updatedPages } : book
-						)
-					)
+					prevLevels.map((level) => ({
+						...level,
+						books: level.books.map((book) =>
+							book.id === bookId
+								? {
+										...book,
+										pages: book.pages.filter((page) => page.id !== pageId),
+								  } // Filter out the deleted page from the book's pages array
+								: book
+						),
+					}))
 				);
+
+				alert("Page deleted successfully!");
 			}
 		} catch (error) {
 			console.error("Error deleting page:", error);
@@ -203,7 +241,7 @@ export default function DisplayLevelsWithBooks() {
 										</div>
 									</h3>
 									<div className="space-y-2">
-										{level.books.length > 0 ? (
+										{level.books?.length > 0 ? (
 											level.books.map((book) => (
 												<div key={book.id}>
 													<div className="flex justify-between items-center">
@@ -231,7 +269,7 @@ export default function DisplayLevelsWithBooks() {
 													<div className="space-y-2 ml-4">
 														{book.pages?.map((page, index) => (
 															<div
-																key={page.id}
+																key={`${page.id}-${index}`} // Unique key combining page.id and index
 																className="flex justify-between items-center"
 															>
 																<p className="text-sm text-gray-600">
@@ -246,9 +284,7 @@ export default function DisplayLevelsWithBooks() {
 																		<span>Edit Page</span>
 																	</button>
 																	<button
-																		onClick={
-																			() => deletePage(book.id, page.id) // Delete button for page
-																		}
+																		onClick={() => deletePage(book.id, page.id)} // Delete button for page
 																		className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
 																	>
 																		<TrashIcon className="w-5 h-5" />
