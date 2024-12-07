@@ -14,13 +14,14 @@ import { ref, getStorage, uploadBytes, getDownloadURL } from "firebase/storage";
 export default function ManagePages() {
 	const [books, setBooks] = useState([]);
 	const [levels, setLevels] = useState([]);
-	const [languages, setLanguages] = useState([]); // Store languages here
+	const [languages, setLanguages] = useState([]);
 	const [translations, setTranslations] = useState([
 		{ language: "", text: "" },
 	]);
 	const [picture, setPicture] = useState(null);
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState(""); // To store error messages
+	const [error, setError] = useState("");
+	const [isFrontCover, setIsFrontCover] = useState(false); // State for front cover checkbox
 
 	// Fetch books, levels, and languages
 	useEffect(() => {
@@ -50,7 +51,7 @@ export default function ManagePages() {
 
 		fetchBooks();
 		fetchLevels();
-		fetchLanguages(); // Fetch languages
+		fetchLanguages();
 	}, []);
 
 	const handlePageSubmit = async (e) => {
@@ -58,9 +59,11 @@ export default function ManagePages() {
 		setLoading(true);
 		setError(""); // Clear previous errors
 
-		const text = e.target.text.value;
+		// Only get the values of the fields that exist
+		const text = isFrontCover ? "" : e.target.text.value; // If it's a front cover, skip the text field
 		const bookId = e.target.bookId.value;
-		const textLanguage = e.target.textLanguage.value; // Selected language ID
+		const textLanguage = e.target.textLanguage?.value || ""; // Use optional chaining in case textLanguage doesn't exist
+		const translations = isFrontCover ? [] : [...translations]; // Skip translations if it's the front cover
 
 		// Validation: Ensure a picture is uploaded
 		if (!picture) {
@@ -69,18 +72,21 @@ export default function ManagePages() {
 			return;
 		}
 
-		// Validation: Ensure there is at least one translation
-		if (!translations.length || !translations[0].text) {
-			setLoading(false);
-			setError("Please provide at least one translation.");
-			return;
-		}
+		// If it's not the front cover, ensure there is at least one translation and original text
+		if (!isFrontCover) {
+			// Validation: Ensure there is at least one translation
+			if (!translations.length || !translations[0].text) {
+				setLoading(false);
+				setError("Please provide at least one translation.");
+				return;
+			}
 
-		// Validation: Ensure original text is provided
-		if (!text) {
-			setLoading(false);
-			setError("Please provide the original text.");
-			return;
+			// Validation: Ensure original text is provided
+			if (!text) {
+				setLoading(false);
+				setError("Please provide the original text.");
+				return;
+			}
 		}
 
 		try {
@@ -98,6 +104,7 @@ export default function ManagePages() {
 				textLanguage, // Save the selected language ID
 				translations,
 				picture: pictureUrl,
+				isFrontCover, // Save whether it's the front cover
 			};
 
 			// Add page to the 'pages' collection
@@ -110,7 +117,11 @@ export default function ManagePages() {
 
 			if (bookSnap.exists()) {
 				const currentPages = bookSnap.data().pages || [];
-				currentPages.push(pageId);
+				if (isFrontCover) {
+					currentPages.unshift(pageId); // If it's the front cover, add it to the start of the array
+				} else {
+					currentPages.push(pageId);
+				}
 
 				await updateDoc(bookDocRef, { pages: currentPages });
 				alert("Page added successfully and associated with the book!");
@@ -185,56 +196,46 @@ export default function ManagePages() {
 					/>
 				</div>
 
-				{/* Text Input */}
-				<div>
-					<label className="block font-medium text-gray-700">Enter Text</label>
-					<textarea
-						name="text"
-						rows="4"
-						required
-						className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-					></textarea>
-				</div>
-
-				{/* Language of Text */}
+				{/* Front Cover Checkbox */}
 				<div>
 					<label className="block font-medium text-gray-700">
-						Language of Text
+						Is this the front cover?
 					</label>
-					<select
-						name="textLanguage"
-						required
-						className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-					>
-						<option value="" disabled selected>
-							Select a language
-						</option>
-						{languages.map((language) => (
-							<option key={language.id} value={language.id}>
-								{language.name}
-							</option>
-						))}
-					</select>
+					<input
+						type="checkbox"
+						checked={isFrontCover}
+						onChange={(e) => setIsFrontCover(e.target.checked)}
+						className="mt-1"
+					/>
 				</div>
 
-				{/* Translations */}
-				<h3 className="text-lg font-medium text-gray-800">Translations</h3>
-				{translations.map((translation, index) => (
-					<div key={index} className="space-y-2">
+				{/* Text Input */}
+				{!isFrontCover && (
+					<div>
 						<label className="block font-medium text-gray-700">
-							Translation {index + 1}
+							Enter Text
 						</label>
-
-						{/* Language Dropdown */}
-						<select
-							value={translation.language}
-							onChange={(e) =>
-								handleInputChange(index, "language", e.target.value)
-							}
+						<textarea
+							name="text"
+							rows="4"
 							required
-							className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+							className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+						></textarea>
+					</div>
+				)}
+
+				{/* Language of Text */}
+				{!isFrontCover && (
+					<div>
+						<label className="block font-medium text-gray-700">
+							Language of Text
+						</label>
+						<select
+							name="textLanguage"
+							required
+							className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
 						>
-							<option value="" disabled>
+							<option value="" disabled selected>
 								Select a language
 							</option>
 							{languages.map((language) => (
@@ -243,36 +244,67 @@ export default function ManagePages() {
 								</option>
 							))}
 						</select>
-
-						{/* Translated Text */}
-						<textarea
-							placeholder="Translated Text"
-							rows="2"
-							value={translation.text}
-							onChange={(e) => handleInputChange(index, "text", e.target.value)}
-							required
-							className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-						/>
 					</div>
-				))}
+				)}
 
-				{/* Add More Translations */}
-				<button
-					type="button"
-					onClick={addTranslation}
-					className="text-blue-600 hover:underline"
-				>
-					+ Add More Translations
-				</button>
+				{/* Translations */}
+				{!isFrontCover && (
+					<>
+						<h3 className="text-lg font-medium text-gray-800">Translations</h3>
+						{translations.map((translation, index) => (
+							<div key={index} className="space-y-2">
+								<label className="block font-medium text-gray-700">
+									Translation {index + 1}
+								</label>
 
-				{/* Submit */}
-				<div>
+								<select
+									value={translation.language}
+									onChange={(e) =>
+										handleInputChange(index, "language", e.target.value)
+									}
+									required
+									className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+								>
+									<option value="" disabled>
+										Select a language
+									</option>
+									{languages.map((language) => (
+										<option key={language.id} value={language.id}>
+											{language.name}
+										</option>
+									))}
+								</select>
+
+								<textarea
+									placeholder="Translated Text"
+									rows="2"
+									value={translation.text}
+									onChange={(e) =>
+										handleInputChange(index, "text", e.target.value)
+									}
+									required
+									className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+								/>
+							</div>
+						))}
+						<button
+							type="button"
+							onClick={addTranslation}
+							className="text-blue-600 hover:underline"
+						>
+							Add Translation
+						</button>
+					</>
+				)}
+
+				{/* Submit Button */}
+				<div className="flex justify-center">
 					<button
 						type="submit"
 						disabled={loading}
-						className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
+						className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
 					>
-						{loading ? "Loading..." : "Submit"}
+						{loading ? "Adding..." : "Add Page"}
 					</button>
 				</div>
 			</form>
