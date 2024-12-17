@@ -1,101 +1,154 @@
-import Image from "next/image";
+"use client";
+// pages/index.js
+import React, { useEffect, useState } from "react";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore"; // Updated import
+import db from "@/app/firebase/config"; // Ensure correct db import
+import { useRouter } from "next/compat/router";
+import { Navbar } from "./components/Navbar";
+import { Hero } from "./components/Hero";
+import { Features } from "./components/Features";
+import { Faq } from "./components/Faq";
+import { Pricing } from "./components/Pricing";
+import { Cta } from "./components/Cta";
+import { Footer } from "./components/Footer";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+const HomePage = () => {
+	const [heroContent, setHeroContent] = useState(null);
+	const [menuItems, setMenuItems] = useState([]);
+	const [testimonials, setTestimonials] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [subscriptionEmail, setSubscriptionEmail] = useState("");
+	const [message, setMessage] = useState("");
+	const [user, setUser] = useState(null);
+	const router = useRouter();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
-}
+	const auth = getAuth();
+	const firestore = getFirestore(); // Ensure Firestore instance is initialized
+
+	useEffect(() => {
+		const fetchContent = async () => {
+			try {
+				// Ensure you're passing the correct db instance and collection name
+				const heroCollection = collection(firestore, "hero");
+				const heroSnapshot = await getDocs(heroCollection);
+				const heroData = heroSnapshot.docs.map((doc) => doc.data());
+				setHeroContent(heroData[0]);
+
+				const menuCollection = collection(firestore, "menu");
+				const menuSnapshot = await getDocs(menuCollection);
+				const menuData = menuSnapshot.docs.map((doc) => doc.data());
+				setMenuItems(menuData);
+
+				const testimonialCollection = collection(firestore, "testimonials");
+				const testimonialSnapshot = await getDocs(testimonialCollection);
+				const testimonialData = testimonialSnapshot.docs.map((doc) =>
+					doc.data()
+				);
+				setTestimonials(testimonialData);
+			} catch (error) {
+				console.error("Error fetching data:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		// Monitor auth state
+		onAuthStateChanged(auth, (currentUser) => {
+			setUser(currentUser);
+		});
+
+		fetchContent();
+	}, [auth, firestore]);
+
+	const handleSubscribe = async (e) => {
+		e.preventDefault();
+		if (!user) {
+			setMessage("Please log in to subscribe.");
+			return;
+		}
+
+		try {
+			const subscriptionCollection = collection(firestore, "subscriptions");
+			await addDoc(subscriptionCollection, {
+				email: subscriptionEmail,
+				userId: user.uid,
+			});
+			setMessage("Subscription successful!");
+			setSubscriptionEmail("");
+		} catch (error) {
+			console.error("Error adding subscription:", error);
+			setMessage("Subscription failed. Please try again.");
+		}
+	};
+
+	const handleLogout = () => {
+		signOut(auth).then(() => setMessage("Logged out successfully."));
+	};
+
+	if (loading) return <p>Loading...</p>;
+
+	return (
+		<div>
+			<Navbar />
+			<Hero />
+			<Features />
+			{/* <Faq /> */}
+			{/* <Pricing /> */}
+			{/* <Cta /> */}
+			<Footer />
+			{/* Hero Section */}
+			{/* {heroContent && (
+				<section className="hero">
+					<h1>{heroContent.title}</h1>
+					<p>{heroContent.description}</p>
+					<button>{heroContent.cta}</button>
+				</section>
+			)} */}
+			{/* User Greeting and Auth Buttons */}
+			{/* <div className="auth">
+				{user ? (
+					<>
+						<p>Welcome, {user.displayName || user.email}!</p>
+						<button onClick={handleLogout}>Log Out</button>
+					</>
+				) : (
+					<button onClick={handleLoginRedirect}>Login with Google</button>
+				)}
+			</div> */}
+			{/* Menu Bar */}
+			{/* <nav className="menu">
+				{menuItems.map((item, index) => (
+					<button key={index}>{item.name}</button>
+				))}
+			</nav> */}
+			{/* Testimonials Section */}
+			{/* <section className="testimonials">
+				<h2>User Testimonials</h2>
+				{testimonials.map((testimonial, index) => (
+					<blockquote key={index}>
+						<p>{testimonial.text}</p>
+						<footer>{testimonial.author}</footer>
+					</blockquote>
+				))}
+			</section> */}
+			{/* Subscription Form */}
+			{/* <section className="subscribe">
+				<h2>Stay Updated</h2>
+				<form onSubmit={handleSubscribe}>
+					<input
+						type="email"
+						value={subscriptionEmail}
+						onChange={(e) => setSubscriptionEmail(e.target.value)}
+						placeholder="Your email"
+						required
+					/>
+					<button type="submit">Subscribe</button>
+				</form>
+				{message && <p>{message}</p>}
+			</section> */}
+		</div>
+	);
+};
+
+export default HomePage;
