@@ -1,16 +1,12 @@
 "use client";
-// pages/index.js
 import React, { useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore"; // Updated import
-import db from "@/app/firebase/config"; // Ensure correct db import
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth"; // Add onAuthStateChanged import
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { useRouter } from "next/compat/router";
+import { auth, firestore } from "@/app/firebase/config"; // Import from config
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
 import { Features } from "./components/Features";
-import { Faq } from "./components/Faq";
-import { Pricing } from "./components/Pricing";
-import { Cta } from "./components/Cta";
 import { Footer } from "./components/Footer";
 
 const HomePage = () => {
@@ -23,13 +19,13 @@ const HomePage = () => {
 	const [user, setUser] = useState(null);
 	const router = useRouter();
 
-	const auth = getAuth();
-	const firestore = getFirestore(); // Ensure Firestore instance is initialized
-
 	useEffect(() => {
+		if (user) {
+			console.log("use client");
+		}
+
 		const fetchContent = async () => {
 			try {
-				// Ensure you're passing the correct db instance and collection name
 				const heroCollection = collection(firestore, "hero");
 				const heroSnapshot = await getDocs(heroCollection);
 				const heroData = heroSnapshot.docs.map((doc) => doc.data());
@@ -54,12 +50,15 @@ const HomePage = () => {
 		};
 
 		// Monitor auth state
-		onAuthStateChanged(auth, (currentUser) => {
+		const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
 			setUser(currentUser);
 		});
 
 		fetchContent();
-	}, [auth, firestore]);
+
+		// Cleanup the listener when the component is unmounted or when the effect reruns
+		return () => unsubscribe();
+	}, [auth, firestore, user]);
 
 	const handleSubscribe = async (e) => {
 		e.preventDefault();
@@ -93,60 +92,7 @@ const HomePage = () => {
 			<Navbar />
 			<Hero />
 			<Features />
-			{/* <Faq /> */}
-			{/* <Pricing /> */}
-			{/* <Cta /> */}
 			<Footer />
-			{/* Hero Section */}
-			{/* {heroContent && (
-				<section className="hero">
-					<h1>{heroContent.title}</h1>
-					<p>{heroContent.description}</p>
-					<button>{heroContent.cta}</button>
-				</section>
-			)} */}
-			{/* User Greeting and Auth Buttons */}
-			{/* <div className="auth">
-				{user ? (
-					<>
-						<p>Welcome, {user.displayName || user.email}!</p>
-						<button onClick={handleLogout}>Log Out</button>
-					</>
-				) : (
-					<button onClick={handleLoginRedirect}>Login with Google</button>
-				)}
-			</div> */}
-			{/* Menu Bar */}
-			{/* <nav className="menu">
-				{menuItems.map((item, index) => (
-					<button key={index}>{item.name}</button>
-				))}
-			</nav> */}
-			{/* Testimonials Section */}
-			{/* <section className="testimonials">
-				<h2>User Testimonials</h2>
-				{testimonials.map((testimonial, index) => (
-					<blockquote key={index}>
-						<p>{testimonial.text}</p>
-						<footer>{testimonial.author}</footer>
-					</blockquote>
-				))}
-			</section> */}
-			{/* Subscription Form */}
-			{/* <section className="subscribe">
-				<h2>Stay Updated</h2>
-				<form onSubmit={handleSubscribe}>
-					<input
-						type="email"
-						value={subscriptionEmail}
-						onChange={(e) => setSubscriptionEmail(e.target.value)}
-						placeholder="Your email"
-						required
-					/>
-					<button type="submit">Subscribe</button>
-				</form>
-				{message && <p>{message}</p>}
-			</section> */}
 		</div>
 	);
 };
