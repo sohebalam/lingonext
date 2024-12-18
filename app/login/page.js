@@ -29,6 +29,14 @@ const SignIn = () => {
 			console.error("Email Sign-In Error:", e);
 		}
 	};
+	const handleSignInWithGoogle = async () => {
+		try {
+			await signIn();
+			router.push("/home");
+		} catch (e) {
+			console.error("Email Sign-In Error:", e);
+		}
+	};
 
 	// Monitor authentication state changes
 	useEffect(() => {
@@ -78,7 +86,7 @@ const SignIn = () => {
 
 				<div className="text-center my-4">
 					<button
-						onClick={signIn}
+						onClick={handleSignInWithGoogle}
 						className="w-full p-3 bg-blue-500 rounded text-white hover:bg-blue-400"
 					>
 						Sign In with Google
