@@ -8,23 +8,14 @@ import {
 	signInWithRedirect,
 	onAuthStateChanged,
 } from "firebase/auth";
+import { useAuth } from "@/app/service/AuthContext";
 
 const SignIn = () => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
 	const router = useRouter();
-
-	// Google sign-in function
-	const handleGoogleSignIn = async () => {
-		try {
-			const provider = new GoogleAuthProvider();
-			await signInWithRedirect(auth, provider);
-		} catch (error) {
-			console.error("Google Sign-In Error:", error);
-		}
-	};
-
+	const { signIn } = useAuth();
 	// Handle email/password sign-in
 	const handleSignIn = async () => {
 		try {
@@ -87,7 +78,7 @@ const SignIn = () => {
 
 				<div className="text-center my-4">
 					<button
-						onClick={handleGoogleSignIn}
+						onClick={signIn}
 						className="w-full p-3 bg-blue-500 rounded text-white hover:bg-blue-400"
 					>
 						Sign In with Google

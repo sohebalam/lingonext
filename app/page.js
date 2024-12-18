@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth"; // Add onAuthStateChanged import
+// import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, getDocs, addDoc } from "firebase/firestore";
 import { useRouter } from "next/compat/router";
-import { auth, firestore } from "@/app/firebase/config"; // Import from config
+// import { auth, firestore } from "@/app/firebase/config"; // Ensure firestore is correctly imported
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
 import { Features } from "./components/Features";
@@ -16,49 +16,22 @@ const HomePage = () => {
 	const [loading, setLoading] = useState(true);
 	const [subscriptionEmail, setSubscriptionEmail] = useState("");
 	const [message, setMessage] = useState("");
-	const [user, setUser] = useState(null);
+	// const [user, setUser] = useState(null);
 	const router = useRouter();
 
-	useEffect(() => {
-		if (user) {
-			console.log("use client");
-		}
+	// useEffect(() => {
+	// 	if (user) {
+	// 		console.log("use client");
+	// 	}
 
-		const fetchContent = async () => {
-			try {
-				const heroCollection = collection(firestore, "hero");
-				const heroSnapshot = await getDocs(heroCollection);
-				const heroData = heroSnapshot.docs.map((doc) => doc.data());
-				setHeroContent(heroData[0]);
+	// 	// Monitor auth state
+	// 	const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+	// 		setUser(currentUser);
+	// 	});
 
-				const menuCollection = collection(firestore, "menu");
-				const menuSnapshot = await getDocs(menuCollection);
-				const menuData = menuSnapshot.docs.map((doc) => doc.data());
-				setMenuItems(menuData);
-
-				const testimonialCollection = collection(firestore, "testimonials");
-				const testimonialSnapshot = await getDocs(testimonialCollection);
-				const testimonialData = testimonialSnapshot.docs.map((doc) =>
-					doc.data()
-				);
-				setTestimonials(testimonialData);
-			} catch (error) {
-				console.error("Error fetching data:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		// Monitor auth state
-		const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-			setUser(currentUser);
-		});
-
-		fetchContent();
-
-		// Cleanup the listener when the component is unmounted or when the effect reruns
-		return () => unsubscribe();
-	}, [auth, firestore, user]);
+	// 	// Cleanup the listener when the component is unmounted or when the effect reruns
+	// 	return () => unsubscribe();
+	// }, [auth, firestore, user]);
 
 	const handleSubscribe = async (e) => {
 		e.preventDefault();
@@ -85,7 +58,7 @@ const HomePage = () => {
 		signOut(auth).then(() => setMessage("Logged out successfully."));
 	};
 
-	if (loading) return <p>Loading...</p>;
+	// if (loading) return <p>Loading...</p>;
 
 	return (
 		<div>

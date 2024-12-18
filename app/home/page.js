@@ -10,6 +10,7 @@ import {
 	updateDoc,
 } from "firebase/firestore";
 import { ref, getStorage, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Navbar } from "../components/Navbar";
 
 export default function ManagePages() {
 	const [books, setBooks] = useState([]);
@@ -152,160 +153,167 @@ export default function ManagePages() {
 	};
 
 	return (
-		<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
-			<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Page</h2>
+		<>
+			<Navbar />
+			<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
+				<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Page</h2>
 
-			{error && (
-				<div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
-					{error}
-				</div>
-			)}
-
-			<form onSubmit={handlePageSubmit} className="space-y-4">
-				{/* Select Book */}
-				<div>
-					<label className="block font-medium text-gray-700">Select Book</label>
-					<select
-						name="bookId"
-						required
-						className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-					>
-						<option value="" disabled selected>
-							Select a book
-						</option>
-						{books.map((book) => (
-							<option key={book.id} value={book.id}>
-								{book.name}
-							</option>
-						))}
-					</select>
-				</div>
-
-				{/* File Input */}
-				<div>
-					<label className="block font-medium text-gray-700">
-						Upload Picture
-					</label>
-					<input
-						type="file"
-						onChange={handleFileChange}
-						accept="image/*"
-						className="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
-					/>
-				</div>
-
-				{/* Front Cover Checkbox */}
-				<div>
-					<label className="block font-medium text-gray-700">
-						Is this the front cover?
-					</label>
-					<input
-						type="checkbox"
-						checked={isFrontCover}
-						onChange={(e) => setIsFrontCover(e.target.checked)}
-						className="mt-1"
-					/>
-				</div>
-
-				{/* Text Input */}
-				{!isFrontCover && (
-					<div>
-						<label className="block font-medium text-gray-700">
-							Enter Text
-						</label>
-						<textarea
-							name="text"
-							rows="4"
-							required
-							className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-						></textarea>
+				{error && (
+					<div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
+						{error}
 					</div>
 				)}
 
-				{/* Language of Text */}
-				{!isFrontCover && (
+				<form onSubmit={handlePageSubmit} className="space-y-4">
+					{/* Select Book */}
 					<div>
 						<label className="block font-medium text-gray-700">
-							Language of Text
+							Select Book
 						</label>
 						<select
-							name="textLanguage"
+							name="bookId"
 							required
 							className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
 						>
 							<option value="" disabled selected>
-								Select a language
+								Select a book
 							</option>
-							{languages.map((language) => (
-								<option key={language.id} value={language.id}>
-									{language.name}
+							{books.map((book) => (
+								<option key={book.id} value={book.id}>
+									{book.name}
 								</option>
 							))}
 						</select>
 					</div>
-				)}
 
-				{/* Translations */}
-				{!isFrontCover && (
-					<>
-						<h3 className="text-lg font-medium text-gray-800">Translations</h3>
-						{translations.map((translation, index) => (
-							<div key={index} className="space-y-2">
-								<label className="block font-medium text-gray-700">
-									Translation {index + 1}
-								</label>
+					{/* File Input */}
+					<div>
+						<label className="block font-medium text-gray-700">
+							Upload Picture
+						</label>
+						<input
+							type="file"
+							onChange={handleFileChange}
+							accept="image/*"
+							className="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
+						/>
+					</div>
 
-								<select
-									value={translation.language}
-									onChange={(e) =>
-										handleInputChange(index, "language", e.target.value)
-									}
-									required
-									className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-								>
-									<option value="" disabled>
-										Select a language
+					{/* Front Cover Checkbox */}
+					<div>
+						<label className="block font-medium text-gray-700">
+							Is this the front cover?
+						</label>
+						<input
+							type="checkbox"
+							checked={isFrontCover}
+							onChange={(e) => setIsFrontCover(e.target.checked)}
+							className="mt-1"
+						/>
+					</div>
+
+					{/* Text Input */}
+					{!isFrontCover && (
+						<div>
+							<label className="block font-medium text-gray-700">
+								Enter Text
+							</label>
+							<textarea
+								name="text"
+								rows="4"
+								required
+								className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+							></textarea>
+						</div>
+					)}
+
+					{/* Language of Text */}
+					{!isFrontCover && (
+						<div>
+							<label className="block font-medium text-gray-700">
+								Language of Text
+							</label>
+							<select
+								name="textLanguage"
+								required
+								className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+							>
+								<option value="" disabled selected>
+									Select a language
+								</option>
+								{languages.map((language) => (
+									<option key={language.id} value={language.id}>
+										{language.name}
 									</option>
-									{languages.map((language) => (
-										<option key={language.id} value={language.id}>
-											{language.name}
+								))}
+							</select>
+						</div>
+					)}
+
+					{/* Translations */}
+					{!isFrontCover && (
+						<>
+							<h3 className="text-lg font-medium text-gray-800">
+								Translations
+							</h3>
+							{translations.map((translation, index) => (
+								<div key={index} className="space-y-2">
+									<label className="block font-medium text-gray-700">
+										Translation {index + 1}
+									</label>
+
+									<select
+										value={translation.language}
+										onChange={(e) =>
+											handleInputChange(index, "language", e.target.value)
+										}
+										required
+										className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+									>
+										<option value="" disabled>
+											Select a language
 										</option>
-									))}
-								</select>
+										{languages.map((language) => (
+											<option key={language.id} value={language.id}>
+												{language.name}
+											</option>
+										))}
+									</select>
 
-								<textarea
-									placeholder="Translated Text"
-									rows="2"
-									value={translation.text}
-									onChange={(e) =>
-										handleInputChange(index, "text", e.target.value)
-									}
-									required
-									className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-								/>
-							</div>
-						))}
+									<textarea
+										placeholder="Translated Text"
+										rows="2"
+										value={translation.text}
+										onChange={(e) =>
+											handleInputChange(index, "text", e.target.value)
+										}
+										required
+										className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+									/>
+								</div>
+							))}
+							<button
+								type="button"
+								onClick={addTranslation}
+								className="text-blue-600 hover:underline"
+							>
+								Add Translation
+							</button>
+						</>
+					)}
+
+					{/* Submit Button */}
+					<div className="flex justify-center">
 						<button
-							type="button"
-							onClick={addTranslation}
-							className="text-blue-600 hover:underline"
+							type="submit"
+							disabled={loading}
+							className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
 						>
-							Add Translation
+							{loading ? "Adding..." : "Add Page"}
 						</button>
-					</>
-				)}
-
-				{/* Submit Button */}
-				<div className="flex justify-center">
-					<button
-						type="submit"
-						disabled={loading}
-						className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-					>
-						{loading ? "Adding..." : "Add Page"}
-					</button>
-				</div>
-			</form>
-		</div>
+					</div>
+				</form>
+			</div>
+		</>
 	);
 }
