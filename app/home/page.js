@@ -10,11 +10,19 @@ import {
 	deleteDoc,
 	setDoc,
 } from "firebase/firestore"; // Firestore methods
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid"; // Heroicons for edit and delete buttons
+import {
+	PencilIcon,
+	TrashIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
+} from "@heroicons/react/24/solid"; // Heroicons for edit, delete, chevrons
+import { Navbar } from "../components/Navbar";
 
 export default function DisplayLevelsWithBooks() {
 	const [levels, setLevels] = useState([]);
 	const [loading, setLoading] = useState(false);
+	const [expandedLevels, setExpandedLevels] = useState([]); // Track expanded levels
+	const [expandedBooks, setExpandedBooks] = useState({}); // Track expanded books
 	const router = useRouter(); // Using the router hook
 
 	useEffect(() => {
@@ -102,212 +110,201 @@ export default function DisplayLevelsWithBooks() {
 	};
 
 	// Handle book deletion
-	// Handle book deletion with confirmation
 	const deleteBook = async (levelId, bookId) => {
-		// Show confirmation dialog before deletion
 		const isConfirmed = window.confirm(
 			"Are you sure you want to delete this book?"
 		);
-		if (!isConfirmed) return; // If not confirmed, exit early
+		if (!isConfirmed) return;
 
 		try {
-			// Delete book from Firestore
 			const bookRef = doc(db, "books", bookId);
 			await deleteDoc(bookRef);
-
-			// Remove the book from the level's books array in state
 			setLevels((prevLevels) =>
 				prevLevels.map((level) =>
 					level.id === levelId
 						? {
 								...level,
-								books: level.books.filter((book) => book.id !== bookId), // Remove book from level's books
+								books: level.books.filter((book) => book.id !== bookId),
 						  }
 						: level
 				)
 			);
-
-			alert("Book deleted successfully!"); // Optional confirmation message
+			alert("Book deleted successfully!");
 		} catch (error) {
 			console.error("Error deleting book:", error);
 		}
 	};
 
 	// Handle level deletion
-	// Handle level deletion with confirmation
 	const deleteLevel = async (levelId) => {
-		// Show confirmation dialog before deletion
 		const isConfirmed = window.confirm(
 			"Are you sure you want to delete this level?"
 		);
-		if (!isConfirmed) return; // If not confirmed, exit early
+		if (!isConfirmed) return;
 
 		try {
-			// Delete level from Firestore
 			const levelRef = doc(db, "levels", levelId);
 			await deleteDoc(levelRef);
-
-			// Remove the level from the state
-			setLevels(
-				(prevLevels) => prevLevels.filter((level) => level.id !== levelId) // Remove level from state
+			setLevels((prevLevels) =>
+				prevLevels.filter((level) => level.id !== levelId)
 			);
-
-			alert("Level deleted successfully!"); // Optional confirmation message
+			alert("Level deleted successfully!");
 		} catch (error) {
 			console.error("Error deleting level:", error);
 		}
 	};
 
-	// Handle page deletion (if pages are included in books)
-
-	const deletePage = async (bookId, pageId) => {
-		// Show confirmation dialog before deletion
-		const isConfirmed = window.confirm(
-			"Are you sure you want to delete this page?"
+	// Toggle expanded level
+	const toggleLevel = (levelId) => {
+		setExpandedLevels((prev) =>
+			prev.includes(levelId)
+				? prev.filter((id) => id !== levelId)
+				: [...prev, levelId]
 		);
-		if (!isConfirmed) return; // If not confirmed, exit early
+	};
 
-		try {
-			const bookRef = doc(db, "books", bookId);
-			const bookSnap = await getDoc(bookRef);
-
-			if (bookSnap.exists()) {
-				const bookData = bookSnap.data();
-
-				// Filter out the page to be deleted from the book's pages array
-				const updatedPages = bookData.pages.filter(
-					(page) => page.id !== pageId
-				);
-
-				// Update the book document with the new pages array
-				await setDoc(bookRef, { ...bookData, pages: updatedPages });
-
-				// Delete the page from the "pages" collection
-				const pageRef = doc(db, "pages", pageId);
-				await deleteDoc(pageRef);
-
-				// Update the displayed levels by removing the page from state
-				setLevels((prevLevels) =>
-					prevLevels.map((level) => ({
-						...level,
-						books: level.books.map((book) =>
-							book.id === bookId
-								? {
-										...book,
-										pages: book.pages.filter((page) => page.id !== pageId),
-								  } // Filter out the deleted page from the book's pages array
-								: book
-						),
-					}))
-				);
-
-				alert("Page deleted successfully!");
-			}
-		} catch (error) {
-			console.error("Error deleting page:", error);
-		}
+	// Toggle expanded book
+	const toggleBook = (levelId, bookId) => {
+		setExpandedBooks((prev) => ({
+			...prev,
+			[levelId]: prev[levelId]?.includes(bookId)
+				? prev[levelId].filter((id) => id !== bookId)
+				: [...(prev[levelId] || []), bookId],
+		}));
 	};
 
 	return (
-		<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
-			<h2 className="text-2xl font-bold text-gray-800 mb-4">
-				Levels with Books
-			</h2>
-			{loading ? (
-				<p>Loading...</p>
-			) : (
-				<div className="space-y-6">
-					{levels.length > 0 ? (
-						levels.map((level) => (
-							<div key={level.id} className="space-y-4">
-								<div>
-									<h3 className="text-xl font-semibold text-gray-800 flex justify-between items-center">
-										{level.name}
-										<div className="flex space-x-4">
-											<button
-												onClick={() => handleEdit("level", level.id)} // Edit button for level
-												className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
-											>
-												<PencilIcon className="w-5 h-5" />
-												<span>Edit Level</span>
-											</button>
-											<button
-												onClick={() => deleteLevel(level.id)} // Delete button for level
-												className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
-											>
-												<TrashIcon className="w-5 h-5" />
-												<span>Delete Level</span>
-											</button>
-										</div>
-									</h3>
-									<div className="space-y-2">
-										{level.books?.length > 0 ? (
-											level.books.map((book) => (
-												<div key={book.id}>
-													<div className="flex justify-between items-center">
-														<h4 className="text-lg font-medium text-gray-700">
-															{book.name ?? "No title available"}
-														</h4>
-														<div className="flex space-x-4">
-															<button
-																onClick={() => handleEdit("book", book.id)} // Edit button for book
-																className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
-															>
-																<PencilIcon className="w-5 h-5" />
-																<span>Edit Book</span>
-															</button>
-															<button
-																onClick={() => deleteBook(level.id, book.id)} // Delete button for book
-																className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
-															>
-																<TrashIcon className="w-5 h-5" />
-																<span>Delete Book</span>
-															</button>
-														</div>
-													</div>
-													{/* Add the books' pages here */}
-													<div className="space-y-2 ml-4">
-														{book.pages?.map((page, index) => (
-															<div
-																key={`${page.id}-${index}`} // Unique key combining page.id and index
-																className="flex justify-between items-center"
-															>
-																<p className="text-sm text-gray-600">
-																	Page {index + 1}: {page.name}
-																</p>
+		<>
+			<Navbar />
+			<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
+				<h2 className="text-2xl font-bold text-gray-800 mb-4">
+					Levels with Books
+				</h2>
+				{loading ? (
+					<p>Loading...</p>
+				) : (
+					<div className="space-y-6">
+						{levels.length > 0 ? (
+							levels.map((level) => (
+								<div key={level.id} className="space-y-4">
+									<div>
+										<h3 className="text-xl font-semibold text-gray-800 flex justify-between items-center">
+											<span>{level.name}</span>
+											<div className="flex space-x-4">
+												<button
+													onClick={() => handleEdit("level", level.id)} // Edit button for level
+													className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
+												>
+													<PencilIcon className="w-5 h-5" />
+													<span>Edit Level</span>
+												</button>
+												<button
+													onClick={() => deleteLevel(level.id)} // Delete button for level
+													className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
+												>
+													<TrashIcon className="w-5 h-5" />
+													<span>Delete Level</span>
+												</button>
+											</div>
+										</h3>
+										<button
+											onClick={() => toggleLevel(level.id)} // Toggle level accordion
+											className="flex items-center space-x-2"
+										>
+											{expandedLevels.includes(level.id) ? (
+												<ChevronUpIcon className="w-6 h-6" />
+											) : (
+												<ChevronDownIcon className="w-6 h-6" />
+											)}
+										</button>
+										{expandedLevels.includes(level.id) && (
+											<div className="space-y-2">
+												{level.books?.length > 0 ? (
+													level.books.map((book) => (
+														<div key={book.id}>
+															<div className="flex justify-between items-center">
+																<h4 className="text-lg font-medium text-gray-700">
+																	{book.name ?? "No title available"}
+																</h4>
 																<div className="flex space-x-4">
 																	<button
-																		onClick={() => handleEdit("page", page.id)} // Edit button for page
+																		onClick={() => handleEdit("book", book.id)} // Edit button for book
 																		className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
 																	>
 																		<PencilIcon className="w-5 h-5" />
-																		<span>Edit Page</span>
+																		<span>Edit Book</span>
 																	</button>
 																	<button
-																		onClick={() => deletePage(book.id, page.id)} // Delete button for page
+																		onClick={() =>
+																			deleteBook(level.id, book.id)
+																		} // Delete button for book
 																		className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
 																	>
 																		<TrashIcon className="w-5 h-5" />
-																		<span>Delete Page</span>
+																		<span>Delete Book</span>
 																	</button>
 																</div>
 															</div>
-														))}
-													</div>
-												</div>
-											))
-										) : (
-											<p>No books available in this level.</p>
+															<button
+																onClick={() => toggleBook(level.id, book.id)} // Toggle book accordion
+																className="flex items-center space-x-2 ml-4"
+															>
+																{expandedBooks[level.id]?.includes(book.id) ? (
+																	<ChevronUpIcon className="w-5 h-5" />
+																) : (
+																	<ChevronDownIcon className="w-5 h-5" />
+																)}
+															</button>
+															{expandedBooks[level.id]?.includes(book.id) && (
+																<div className="space-y-2 ml-6">
+																	{book.pages?.map((page, index) => (
+																		<div
+																			key={`${page.id}-${index}`}
+																			className="flex justify-between items-center"
+																		>
+																			<p className="text-sm text-gray-600">
+																				Page {index + 1}: {page.name}
+																			</p>
+																			<div className="flex space-x-4">
+																				<button
+																					onClick={() =>
+																						handleEdit("page", page.id)
+																					} // Edit button for page
+																					className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-2"
+																				>
+																					<PencilIcon className="w-5 h-5" />
+																					<span>Edit Page</span>
+																				</button>
+																				<button
+																					onClick={() =>
+																						deletePage(book.id, page.id)
+																					} // Delete button for page
+																					className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2"
+																				>
+																					<TrashIcon className="w-5 h-5" />
+																					<span>Delete Page</span>
+																				</button>
+																			</div>
+																		</div>
+																	))}
+																</div>
+															)}
+														</div>
+													))
+												) : (
+													<p>No books available in this level.</p>
+												)}
+											</div>
 										)}
 									</div>
 								</div>
-							</div>
-						))
-					) : (
-						<p>No levels found.</p>
-					)}
-				</div>
-			)}
-		</div>
+							))
+						) : (
+							<p>No levels found.</p>
+						)}
+					</div>
+				)}
+			</div>
+		</>
 	);
 }

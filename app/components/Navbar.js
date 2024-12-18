@@ -4,13 +4,15 @@ import User from "../../public/assets/User.svg";
 import Menu from "../../public/assets/Menu.svg";
 import { useAuth } from "@/app/service/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // Import Link from Next.js
 import React, { useEffect, useState } from "react";
 
 const navLinks = [
-	{ name: "Home" },
-	{ name: "Pricing" },
-	{ name: "Enterprise" },
-	{ name: "Contact Us" },
+	{ name: "Home", href: "/" },
+	{ name: "Dashboard", href: "/dashboard" },
+	{ name: "Contact Us", href: "/contact" },
+	{ name: "Bookform", href: "/forms/bookform" },
+	{ name: "Forms", href: "/forms" },
 ];
 
 export function Navbar() {
@@ -40,9 +42,9 @@ export function Navbar() {
 
 				<div className="hidden lg:flex pl-[74px] gap-x-[56px]">
 					{navLinks.map((item, index) => (
-						<p className="text-[#36485C] font-medium" key={index}>
-							{item.name}
-						</p>
+						<Link key={index} href={item.href}>
+							<p className="text-[#36485C] font-medium">{item.name}</p>
+						</Link>
 					))}
 				</div>
 			</div>

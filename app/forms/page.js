@@ -10,6 +10,7 @@ import {
 	updateDoc,
 	arrayUnion,
 } from "firebase/firestore";
+import { Navbar } from "../components/Navbar";
 
 export default function ManageLevelsBooks() {
 	const [levels, setLevels] = useState([]);
@@ -159,124 +160,129 @@ export default function ManageLevelsBooks() {
 	};
 
 	return (
-		<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
-			{/* Add Language Form */}
-			<div>
-				<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Language</h2>
-				<form onSubmit={handleLanguageSubmit} className="space-y-4">
-					<input
-						type="text"
-						name="languageName"
-						placeholder="Enter language name"
-						required
-						className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-					/>
-					<button
-						type="submit"
-						disabled={loading}
-						className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
-					>
-						{loading ? "Loading..." : "Add Language"}
-					</button>
-				</form>
-			</div>
-			{/* Level Form */}
-			<div>
-				<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Level</h2>
-				<form onSubmit={handleLevelSubmit} className="space-y-4">
-					<input
-						type="text"
-						name="levelName"
-						placeholder="Enter level name"
-						required
-						className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-					/>
-					<button
-						type="submit"
-						disabled={loading}
-						className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
-					>
-						{loading ? "Loading..." : "Add Level"}
-					</button>
-				</form>
-			</div>
-
-			{/* Book Form */}
-			<div>
-				<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Book</h2>
-				<form onSubmit={handleBookSubmit} className="space-y-4">
-					<input
-						type="text"
-						name="bookName"
-						placeholder="Enter book name"
-						required
-						className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-					/>
-					<button
-						type="submit"
-						disabled={loading}
-						className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
-					>
-						{loading ? "Loading..." : "Add Book"}
-					</button>
-				</form>
-			</div>
-
-			{/* Assign Book to Level Form */}
-			<div>
-				<h2 className="text-2xl font-bold text-gray-800 mb-4">
-					Assign Book to Level
-				</h2>
-				<form onSubmit={handleAssignBookToLevel} className="space-y-4">
-					<div>
-						<label className="block font-medium text-gray-700">
-							Select Book
-						</label>
-						<select
-							value={selectedBook}
-							onChange={(e) => setSelectedBook(e.target.value)}
+		<>
+			<Navbar />
+			<div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-md shadow-md space-y-8">
+				{/* Add Language Form */}
+				<div>
+					<h2 className="text-2xl font-bold text-gray-800 mb-4">
+						Add Language
+					</h2>
+					<form onSubmit={handleLanguageSubmit} className="space-y-4">
+						<input
+							type="text"
+							name="languageName"
+							placeholder="Enter language name"
 							required
-							className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+							className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+						/>
+						<button
+							type="submit"
+							disabled={loading}
+							className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
 						>
-							<option value="" disabled>
-								Select a book
-							</option>
-							{books.map((book) => (
-								<option key={book.id} value={book.id}>
-									{book.name}
-								</option>
-							))}
-						</select>
-					</div>
-					<div>
-						<label className="block font-medium text-gray-700">
-							Select Level
-						</label>
-						<select
-							value={selectedLevel}
-							onChange={(e) => setSelectedLevel(e.target.value)}
+							{loading ? "Loading..." : "Add Language"}
+						</button>
+					</form>
+				</div>
+				{/* Level Form */}
+				<div>
+					<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Level</h2>
+					<form onSubmit={handleLevelSubmit} className="space-y-4">
+						<input
+							type="text"
+							name="levelName"
+							placeholder="Enter level name"
 							required
-							className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+							className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+						/>
+						<button
+							type="submit"
+							disabled={loading}
+							className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
 						>
-							<option value="" disabled>
-								Select a level
-							</option>
-							{levels.map((level) => (
-								<option key={level.id} value={level.id}>
-									{level.name}
+							{loading ? "Loading..." : "Add Level"}
+						</button>
+					</form>
+				</div>
+
+				{/* Book Form */}
+				<div>
+					<h2 className="text-2xl font-bold text-gray-800 mb-4">Add Book</h2>
+					<form onSubmit={handleBookSubmit} className="space-y-4">
+						<input
+							type="text"
+							name="bookName"
+							placeholder="Enter book name"
+							required
+							className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+						/>
+						<button
+							type="submit"
+							disabled={loading}
+							className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
+						>
+							{loading ? "Loading..." : "Add Book"}
+						</button>
+					</form>
+				</div>
+
+				{/* Assign Book to Level Form */}
+				<div>
+					<h2 className="text-2xl font-bold text-gray-800 mb-4">
+						Assign Book to Level
+					</h2>
+					<form onSubmit={handleAssignBookToLevel} className="space-y-4">
+						<div>
+							<label className="block font-medium text-gray-700">
+								Select Book
+							</label>
+							<select
+								value={selectedBook}
+								onChange={(e) => setSelectedBook(e.target.value)}
+								required
+								className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+							>
+								<option value="" disabled>
+									Select a book
 								</option>
-							))}
-						</select>
-					</div>
-					<button
-						type="submit"
-						disabled={loading}
-						className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
-					>
-						{loading ? "Loading..." : "Assign Book to Level"}
-					</button>
-				</form>
+								{books.map((book) => (
+									<option key={book.id} value={book.id}>
+										{book.name}
+									</option>
+								))}
+							</select>
+						</div>
+						<div>
+							<label className="block font-medium text-gray-700">
+								Select Level
+							</label>
+							<select
+								value={selectedLevel}
+								onChange={(e) => setSelectedLevel(e.target.value)}
+								required
+								className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+							>
+								<option value="" disabled>
+									Select a level
+								</option>
+								{levels.map((level) => (
+									<option key={level.id} value={level.id}>
+										{level.name}
+									</option>
+								))}
+							</select>
+						</div>
+						<button
+							type="submit"
+							disabled={loading}
+							className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
+						>
+							{loading ? "Loading..." : "Assign Book to Level"}
+						</button>
+					</form>
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }
