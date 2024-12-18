@@ -19,20 +19,6 @@ const HomePage = () => {
 	// const [user, setUser] = useState(null);
 	const router = useRouter();
 
-	// useEffect(() => {
-	// 	if (user) {
-	// 		console.log("use client");
-	// 	}
-
-	// 	// Monitor auth state
-	// 	const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-	// 		setUser(currentUser);
-	// 	});
-
-	// 	// Cleanup the listener when the component is unmounted or when the effect reruns
-	// 	return () => unsubscribe();
-	// }, [auth, firestore, user]);
-
 	const handleSubscribe = async (e) => {
 		e.preventDefault();
 		if (!user) {
